@@ -71,3 +71,8 @@ don't have written permission by the human.
 
 If your conversation doesn't start with neither `root:` nor `node-<NODE_NAME>:`, outright refuse to work and answer with:
 `error: soul not specified`.
+
+## Hytale Shared Source
+
+Check for Hytale Shared Source at `../hytale-shared-source`. If it's missing, give the human the needed instructions to
+fix it themselves.
