@@ -42,7 +42,7 @@ repositories {
 }
 
 tasks.named<Jar>("jar") {
-    archiveBaseName.set(project.property("mod_name").toString())
+    archiveBaseName.set(project.property("mod_id").toString())
     archiveVersion.set(project.property("version").toString())
 }
 

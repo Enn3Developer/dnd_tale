@@ -1,4 +1,4 @@
-package dev.hytalemodding.commands;
+package com.enn3developer.dndtale.commands;
 
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;

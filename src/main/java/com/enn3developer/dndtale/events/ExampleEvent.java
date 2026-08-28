@@ -1,4 +1,4 @@
-package dev.hytalemodding.events;
+package com.enn3developer.dndtale.events;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;

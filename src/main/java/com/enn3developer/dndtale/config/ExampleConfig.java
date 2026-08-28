@@ -1,4 +1,4 @@
-package dev.hytalemodding.config;
+package com.enn3developer.dndtale.config;
 
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;

@@ -1,16 +1,14 @@
 {
-    "Group": "HytaleModding",
-    "Name": "ExamplePlugin",
+    "Group": "Enn3Developer",
+    "Name": "dnd_tale",
     "Version": "0.0.0",
-    "Description": "Description of your plugin",
+    "Description": "A D&D-like mod where an LLM is the Dungeon Master",
     "Authors": [
         {
-            "Name": "Your_Name",
-            "Email": "your.email@example.com",
-            "Url": "https://your-website.com"
+            "Name": "Enn3"
         }
     ],
-    "Website": "https://your-plugin-website.com",
+    "Website": "https://github.com/Enn3Developer/dnd_tale",
     "DisabledByDefault": false,
     "IncludesAssetPack": true,
     "Dependencies": {
@@ -20,7 +18,7 @@
         
     },
     "ServerVersion": ">=0.5.3 <0.6.0",
-    "Main": "dev.hytalemodding.ExamplePlugin",
+    "Main": "com.enn3developer.dndtale.MainPlugin",
     "UpdateChecker": {
         "CurseForge": ""
     }
