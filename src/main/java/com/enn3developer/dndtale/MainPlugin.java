@@ -6,7 +6,12 @@ import com.enn3developer.dndtale.llm.ClaudeCliClient;
 import com.enn3developer.dndtale.llm.LlmClient;
 import com.enn3developer.dndtale.mcp.McpBridge;
 import com.enn3developer.dndtale.mcp.McpCommandRegistry;
+import com.enn3developer.dndtale.mcp.commands.GetFlagsCommand;
 import com.enn3developer.dndtale.mcp.commands.ListPlayersCommand;
+import com.enn3developer.dndtale.mcp.commands.SetFlagCommand;
+import com.enn3developer.dndtale.mcp.commands.SetTimeCommand;
+import com.enn3developer.dndtale.mcp.commands.SetWeatherCommand;
+import com.enn3developer.dndtale.mcp.commands.TeleportPlayerCommand;
 import com.enn3developer.dndtale.mcp.commands.NarrateCommand;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
@@ -43,6 +48,11 @@ public class MainPlugin extends JavaPlugin {
             McpCommandRegistry registry = new McpCommandRegistry(settings.getAllowedTools());
             registry.register(new ListPlayersCommand());
             registry.register(new NarrateCommand());
+            registry.register(new GetFlagsCommand());
+            registry.register(new SetTimeCommand());
+            registry.register(new SetWeatherCommand());
+            registry.register(new TeleportPlayerCommand());
+            registry.register(new SetFlagCommand());
 
             McpBridge bridge = new McpBridge(registry);
             this.mcpBridge = bridge;
