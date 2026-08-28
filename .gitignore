@@ -10,3 +10,7 @@ run/
 .project
 .settings/
 .vscode
+.env
+.env.*
+*.local.properties
+secrets.*

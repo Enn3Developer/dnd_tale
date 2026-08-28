@@ -10,7 +10,7 @@
     ],
     "Website": "https://github.com/Enn3Developer/dnd_tale",
     "DisabledByDefault": false,
-    "IncludesAssetPack": true,
+    "IncludesAssetPack": false,
     "Dependencies": {
         "Hytale:AssetModule": "*"
     },

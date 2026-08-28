@@ -1,8 +1,7 @@
 plugins {
-// Uncomment if you are using IntelliJ.
-//  idea
+    idea
     java
-    id("com.azuredoom.hytale-tools") version "1.+"
+    id("com.azuredoom.hytale-tools") version "1.0.50"
 }
 
 
@@ -34,7 +33,7 @@ hytaleTools {
     patchline = property("patchline").toString()
     injectServerJavadocsIntoSources = property("injectServerJavadocsIntoSources").toString().toBoolean()
     generateAssetsBinary = property("generateAssetsBinary").toString().toBoolean()
-    // hytaleHomeOverride = property("hytaleHomeOverride").toString()
+    findProperty("hytaleHomeOverride")?.let { hytaleHomeOverride = it.toString() }
 }
 
 repositories {
@@ -46,10 +45,9 @@ tasks.named<Jar>("jar") {
     archiveVersion.set(project.property("version").toString())
 }
 
-// Uncomment if you are using IntelliJ.
-// idea {
-//     module {
-//         isDownloadSources = true
-//         isDownloadJavadoc = true
-//     }
-// }
+idea {
+    module {
+        isDownloadSources = true
+        isDownloadJavadoc = true
+    }
+}
