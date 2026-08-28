@@ -14,3 +14,5 @@ run/
 .env.*
 *.local.properties
 secrets.*
+src/main/resources/dndtale.json
+src/main/resources/dndtale.json.bak

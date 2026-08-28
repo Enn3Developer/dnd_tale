@@ -23,17 +23,44 @@ public final class ClaudeCliClient implements LlmClient {
     public static final String BACKEND = "claude-cli";
     private static final String TOKEN_ENV = "CLAUDE_CODE_OAUTH_TOKEN";
     private static final long PROBE_TIMEOUT_SECONDS = 15L;
+    private static final String MCP_SERVER_NAME = "dndtale";
 
     private final String binary;
     private final String model;
     private final long promptTimeoutSeconds;
     private final ExecutorService executor;
+    @Nullable
+    private final String mcpUrl;
+    @Nullable
+    private final String mcpToken;
 
     public ClaudeCliClient(@Nonnull String binary, @Nonnull String model, long promptTimeoutSeconds) {
+        this(binary, model, promptTimeoutSeconds, null, null);
+    }
+
+    public ClaudeCliClient(@Nonnull String binary, @Nonnull String model, long promptTimeoutSeconds,
+                           @Nullable String mcpUrl, @Nullable String mcpToken) {
         this.binary = binary;
         this.model = model;
         this.promptTimeoutSeconds = promptTimeoutSeconds;
+        this.mcpUrl = mcpUrl;
+        this.mcpToken = mcpToken;
         this.executor = Executors.newVirtualThreadPerTaskExecutor();
+    }
+
+    @Nonnull
+    private String mcpConfigJson() {
+        JsonObject headers = new JsonObject();
+        headers.addProperty("Authorization", "Bearer " + mcpToken);
+        JsonObject server = new JsonObject();
+        server.addProperty("type", "http");
+        server.addProperty("url", mcpUrl);
+        server.add("headers", headers);
+        JsonObject servers = new JsonObject();
+        servers.add(MCP_SERVER_NAME, server);
+        JsonObject root = new JsonObject();
+        root.add("mcpServers", servers);
+        return root.toString();
     }
 
     @Nonnull
@@ -95,6 +122,13 @@ public final class ClaudeCliClient implements LlmClient {
         if (sessionId != null && !sessionId.isBlank()) {
             command.add("--resume");
             command.add(sessionId);
+        }
+        if (mcpUrl != null && mcpToken != null) {
+            command.add("--mcp-config");
+            command.add(mcpConfigJson());
+            command.add("--strict-mcp-config");
+            command.add("--allowedTools");
+            command.add("mcp__" + MCP_SERVER_NAME + "__*");
         }
 
         ProcessOutput out;
