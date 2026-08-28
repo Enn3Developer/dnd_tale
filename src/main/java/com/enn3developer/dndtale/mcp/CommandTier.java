@@ -1,6 +1,6 @@
 package com.enn3developer.dndtale.mcp;
 
-public enum ToolTier {
+public enum CommandTier {
     PERCEPTION,
     SCENE,
     CONSEQUENCE

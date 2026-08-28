@@ -4,9 +4,10 @@ import com.enn3developer.dndtale.commands.DndTaleCommand;
 import com.enn3developer.dndtale.config.DndTaleConfig;
 import com.enn3developer.dndtale.llm.ClaudeCliClient;
 import com.enn3developer.dndtale.llm.LlmClient;
-import com.enn3developer.dndtale.mcp.McpServer;
-import com.enn3developer.dndtale.tools.ListPlayersTool;
-import com.enn3developer.dndtale.tools.NarrateTool;
+import com.enn3developer.dndtale.mcp.McpBridge;
+import com.enn3developer.dndtale.mcp.McpCommandRegistry;
+import com.enn3developer.dndtale.mcp.commands.ListPlayersCommand;
+import com.enn3developer.dndtale.mcp.commands.NarrateCommand;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
@@ -22,7 +23,7 @@ public class MainPlugin extends JavaPlugin {
 
     private final Config<DndTaleConfig> config;
     @Nullable
-    private McpServer mcpServer;
+    private McpBridge mcpBridge;
     @Nullable
     private LlmClient llmClient;
 
@@ -39,12 +40,14 @@ public class MainPlugin extends JavaPlugin {
         String mcpUrl = null;
         String mcpToken = null;
         try {
-            McpServer server = new McpServer(settings.getAllowedTools());
-            server.register(new ListPlayersTool());
-            server.register(new NarrateTool());
-            this.mcpServer = server;
-            mcpUrl = server.url();
-            mcpToken = server.token();
+            McpCommandRegistry registry = new McpCommandRegistry(settings.getAllowedTools());
+            registry.register(new ListPlayersCommand());
+            registry.register(new NarrateCommand());
+
+            McpBridge bridge = new McpBridge(registry);
+            this.mcpBridge = bridge;
+            mcpUrl = bridge.url();
+            mcpToken = bridge.token();
             LOGGER.atInfo().log("DnD Tale MCP server listening on %s", mcpUrl);
         } catch (Exception e) {
             LOGGER.atSevere().withCause(e).log("DnD Tale MCP server failed to start; the DM will have no tools");

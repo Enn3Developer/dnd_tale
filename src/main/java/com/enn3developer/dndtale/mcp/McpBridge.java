@@ -4,9 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import com.hypixel.hytale.logger.HytaleLogger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -15,34 +15,27 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
-public final class McpServer implements AutoCloseable {
+public final class McpBridge implements AutoCloseable {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
     private static final String PATH = "/mcp";
     private static final String PROTOCOL_VERSION = "2025-11-25";
+    private static final String SERVER_NAME = "dndtale";
 
+    private final McpCommandRegistry registry;
     private final HttpServer http;
     private final String token;
-    private final Map<String, McpTool> tools = new LinkedHashMap<>();
-    private final Set<String> allowed;
 
-    public McpServer(@Nonnull Set<String> allowed) throws IOException {
-        this.allowed = allowed;
+    public McpBridge(@Nonnull McpCommandRegistry registry) throws IOException {
+        this.registry = registry;
         this.token = UUID.randomUUID().toString();
         this.http = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         this.http.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         this.http.createContext(PATH, this::handle);
         this.http.start();
-    }
-
-    public void register(@Nonnull McpTool tool) {
-        tools.put(tool.name(), tool);
     }
 
     @Nonnull
@@ -55,8 +48,9 @@ public final class McpServer implements AutoCloseable {
         return token;
     }
 
-    public boolean isAllowed(@Nonnull McpTool tool) {
-        return allowed.contains(tool.tier().name()) || allowed.contains(tool.name());
+    @Nonnull
+    public String serverName() {
+        return SERVER_NAME;
     }
 
     private void handle(@Nonnull HttpExchange exchange) throws IOException {
@@ -71,9 +65,9 @@ public final class McpServer implements AutoCloseable {
                 return;
             }
 
-            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
             JsonObject request;
             try {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                 request = JsonParser.parseString(body).getAsJsonObject();
             } catch (Exception e) {
                 respond(exchange, error(null, -32700, "Parse error"));
@@ -82,12 +76,7 @@ public final class McpServer implements AutoCloseable {
 
             String method = request.has("method") ? request.get("method").getAsString() : "";
             JsonElement id = request.get("id");
-
-            if (method.startsWith("notifications/")) {
-                exchange.sendResponseHeaders(202, -1);
-                return;
-            }
-            if (id == null) {
+            if (method.startsWith("notifications/") || id == null) {
                 exchange.sendResponseHeaders(202, -1);
                 return;
             }
@@ -99,64 +88,74 @@ public final class McpServer implements AutoCloseable {
 
     @Nonnull
     private JsonObject dispatch(@Nonnull String method, @Nonnull JsonElement id, @Nonnull JsonObject request) {
-        switch (method) {
-            case "initialize" -> {
-                JsonObject caps = new JsonObject();
-                JsonObject toolsCap = new JsonObject();
-                toolsCap.addProperty("listChanged", false);
-                caps.add("tools", toolsCap);
+        return switch (method) {
+            case "initialize" -> success(id, initializeResult());
+            case "tools/list" -> success(id, toolsListResult());
+            case "tools/call" -> callResult(id, request);
+            default -> error(id, -32601, "Method not found: " + method);
+        };
+    }
 
-                JsonObject info = new JsonObject();
-                info.addProperty("name", "dndtale");
-                info.addProperty("title", "DnD Tale");
-                info.addProperty("version", "0.0.0");
+    @Nonnull
+    private static JsonObject initializeResult() {
+        JsonObject tools = new JsonObject();
+        tools.addProperty("listChanged", false);
+        JsonObject capabilities = new JsonObject();
+        capabilities.add("tools", tools);
 
-                JsonObject result = new JsonObject();
-                result.addProperty("protocolVersion", PROTOCOL_VERSION);
-                result.add("capabilities", caps);
-                result.add("serverInfo", info);
-                return success(id, result);
-            }
-            case "tools/list" -> {
-                JsonArray list = new JsonArray();
-                for (McpTool tool : tools.values()) {
-                    if (!isAllowed(tool)) {
-                        continue;
-                    }
-                    JsonObject entry = new JsonObject();
-                    entry.addProperty("name", tool.name());
-                    entry.addProperty("title", tool.title());
-                    entry.addProperty("description", tool.description());
-                    entry.add("inputSchema", tool.inputSchema());
-                    list.add(entry);
-                }
-                JsonObject result = new JsonObject();
-                result.add("tools", list);
-                return success(id, result);
-            }
-            case "tools/call" -> {
-                JsonObject params = request.has("params") ? request.getAsJsonObject("params") : new JsonObject();
-                String name = params.has("name") ? params.get("name").getAsString() : "";
-                JsonObject args = params.has("arguments") && params.get("arguments").isJsonObject()
-                    ? params.getAsJsonObject("arguments")
-                    : new JsonObject();
+        JsonObject info = new JsonObject();
+        info.addProperty("name", SERVER_NAME);
+        info.addProperty("title", "DnD Tale");
+        info.addProperty("version", "0.0.0");
 
-                McpTool tool = tools.get(name);
-                if (tool == null || !isAllowed(tool)) {
-                    return error(id, -32602, "Unknown tool: " + name);
-                }
-                LOGGER.atInfo().log("DM tool call: %s %s", name, args);
-                try {
-                    return success(id, content(tool.call(args), false));
-                } catch (Exception e) {
-                    LOGGER.atWarning().withCause(e).log("DM tool '%s' failed", name);
-                    String detail = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-                    return success(id, content(detail, true));
-                }
-            }
-            default -> {
-                return error(id, -32601, "Method not found: " + method);
-            }
+        JsonObject result = new JsonObject();
+        result.addProperty("protocolVersion", PROTOCOL_VERSION);
+        result.add("capabilities", capabilities);
+        result.add("serverInfo", info);
+        return result;
+    }
+
+    @Nonnull
+    private JsonObject toolsListResult() {
+        JsonArray list = new JsonArray();
+        for (McpCommand command : registry.exposed()) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("name", command.name());
+            entry.addProperty("title", command.title());
+            entry.addProperty("description", command.description());
+            entry.add("inputSchema", command.inputSchema());
+            list.add(entry);
+        }
+        JsonObject result = new JsonObject();
+        result.add("tools", list);
+        return result;
+    }
+
+    @Nonnull
+    private JsonObject callResult(@Nonnull JsonElement id, @Nonnull JsonObject request) {
+        JsonObject params = request.has("params") && request.get("params").isJsonObject()
+            ? request.getAsJsonObject("params")
+            : new JsonObject();
+        String name = params.has("name") ? params.get("name").getAsString() : "";
+        JsonObject arguments = params.has("arguments") && params.get("arguments").isJsonObject()
+            ? params.getAsJsonObject("arguments")
+            : new JsonObject();
+
+        McpCommand command = registry.resolve(name);
+        if (command == null) {
+            return error(id, -32602, "Unknown tool: " + name);
+        }
+
+        LOGGER.atInfo().log("DM command %s [%s] %s", command.name(), command.tier(), arguments);
+        try {
+            return success(id, content(command.invoke(arguments), false));
+        } catch (IllegalArgumentException e) {
+            LOGGER.atInfo().log("DM command '%s' rejected: %s", command.name(), e.getMessage());
+            return success(id, content(String.valueOf(e.getMessage()), true));
+        } catch (Exception e) {
+            LOGGER.atWarning().withCause(e).log("DM command '%s' failed", command.name());
+            String detail = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            return success(id, content(detail, true));
         }
     }
 
@@ -184,15 +183,15 @@ public final class McpServer implements AutoCloseable {
 
     @Nonnull
     private static JsonObject error(@Nullable JsonElement id, int code, @Nonnull String message) {
-        JsonObject err = new JsonObject();
-        err.addProperty("code", code);
-        err.addProperty("message", message);
+        JsonObject details = new JsonObject();
+        details.addProperty("code", code);
+        details.addProperty("message", message);
         JsonObject response = new JsonObject();
         response.addProperty("jsonrpc", "2.0");
         if (id != null) {
             response.add("id", id);
         }
-        response.add("error", err);
+        response.add("error", details);
         return response;
     }
 
