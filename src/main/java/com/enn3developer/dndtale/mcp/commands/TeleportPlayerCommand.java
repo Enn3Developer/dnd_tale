@@ -5,13 +5,13 @@ import com.enn3developer.dndtale.mcp.McpArgument;
 import com.enn3developer.dndtale.mcp.McpArgumentType;
 import com.enn3developer.dndtale.mcp.McpCommand;
 import com.enn3developer.dndtale.mcp.McpCommandContext;
+import com.enn3developer.dndtale.mcp.Players;
 import com.enn3developer.dndtale.mcp.Worlds;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.joml.Vector3d;
 
@@ -40,21 +40,8 @@ public class TeleportPlayerCommand extends McpCommand {
     @Override
     protected String execute(@Nonnull McpCommandContext context) {
         String username = context.get(player);
-        PlayerRef target = null;
-        for (PlayerRef candidate : Universe.get().getPlayers()) {
-            if (candidate.isValid() && username.equalsIgnoreCase(candidate.getUsername())) {
-                target = candidate;
-                break;
-            }
-        }
-        if (target == null) {
-            throw new IllegalArgumentException("No connected player named '" + username + "'");
-        }
-
-        Ref<EntityStore> ref = target.getReference();
-        if (ref == null || !ref.isValid()) {
-            throw new IllegalStateException("Player '" + username + "' is not currently in a world");
-        }
+        PlayerRef target = Players.require(username);
+        Ref<EntityStore> ref = Players.requireReference(target);
 
         var store = ref.getStore();
         var world = store.getExternalData().getWorld();

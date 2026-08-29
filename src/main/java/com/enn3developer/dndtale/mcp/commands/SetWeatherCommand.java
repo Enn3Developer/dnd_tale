@@ -1,5 +1,6 @@
 package com.enn3developer.dndtale.mcp.commands;
 
+import com.enn3developer.dndtale.mcp.Assets;
 import com.enn3developer.dndtale.mcp.CommandTier;
 import com.enn3developer.dndtale.mcp.McpArgument;
 import com.enn3developer.dndtale.mcp.McpArgumentType;
@@ -37,8 +38,7 @@ public class SetWeatherCommand extends McpCommand {
 
         Set<String> known = new TreeSet<>(Weather.getAssetMap().getAssetMap().keySet());
         if (!known.contains(forced)) {
-            throw new IllegalArgumentException(
-                "Unknown weather '" + forced + "'. This server accepts: " + String.join(", ", known));
+            throw Assets.unknown("weather", forced, known);
         }
 
         World target = Worlds.resolve(context.getOrNull(world));

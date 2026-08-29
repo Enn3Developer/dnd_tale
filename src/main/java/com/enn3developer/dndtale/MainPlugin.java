@@ -7,7 +7,10 @@ import com.enn3developer.dndtale.llm.LlmClient;
 import com.enn3developer.dndtale.mcp.McpBridge;
 import com.enn3developer.dndtale.mcp.McpCommandRegistry;
 import com.enn3developer.dndtale.mcp.commands.GetFlagsCommand;
+import com.enn3developer.dndtale.mcp.commands.GiveItemCommand;
 import com.enn3developer.dndtale.mcp.commands.ListPlayersCommand;
+import com.enn3developer.dndtale.mcp.commands.PlaySoundCommand;
+import com.enn3developer.dndtale.mcp.commands.SpawnNpcCommand;
 import com.enn3developer.dndtale.mcp.commands.SetFlagCommand;
 import com.enn3developer.dndtale.mcp.commands.SetTimeCommand;
 import com.enn3developer.dndtale.mcp.commands.SetWeatherCommand;
@@ -52,7 +55,10 @@ public class MainPlugin extends JavaPlugin {
             registry.register(new SetTimeCommand());
             registry.register(new SetWeatherCommand());
             registry.register(new TeleportPlayerCommand());
+            registry.register(new PlaySoundCommand());
+            registry.register(new SpawnNpcCommand());
             registry.register(new SetFlagCommand());
+            registry.register(new GiveItemCommand());
 
             McpBridge bridge = new McpBridge(registry);
             this.mcpBridge = bridge;
